@@ -1,0 +1,30 @@
+:host ::ng-deep .p-menubar {
+  padding: unset;
+  padding-bottom: 0.375rem;
+  background-color: var(--surface-app);
+  border: none;
+  border-radius: unset;
+  border-bottom: 1px solid var(--border-subtle);
+
+  .p-menubar-item {
+    .p-menubar-item-label {
+      color: var(--accent-muted);
+    }
+
+    .p-menubar-item-link:not(.p-menubar-item-link-active) {
+      border-radius: inherit;
+      &:hover {
+        background-color: var(--control-secondary);
+      }
+    }
+
+    .p-menubar-item-link-active {
+      border-radius: inherit;
+      background-color: var(--control-primary);
+
+      .p-menubar-item-label {
+        color: var(--accent-contrast);
+      }
+    }
+  }
+}

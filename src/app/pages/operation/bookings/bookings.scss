@@ -1,0 +1,507 @@
+$bg: #0b0b0e;
+$panel: #131316;
+$panel-2: #1a1b20;
+$border: #2a2d35;
+$text: #ffffff;
+$muted: #a0a7b4;
+$primary: #7c5cff;
+$success: #15c39a;
+$info: #3b82f6;
+$danger: #ef4444;
+
+.crm-bookings-page {
+  padding: 1rem;
+  color: $text;
+
+  .page-header {
+    margin-bottom: 1rem;
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 6px 0 0;
+      color: $muted;
+      font-size: 14px;
+    }
+  }
+
+  .filters-card,
+  .list-card {
+    background: $panel;
+    border: 1px solid $border;
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .filters-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 12px;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .form-control {
+    width: 100%;
+    background: $panel-2;
+    border: 1px solid $border;
+    color: $text;
+    border-radius: 10px;
+    padding: 11px 12px;
+    outline: none;
+
+    &:focus {
+      border-color: rgba($primary, 0.7);
+      box-shadow: 0 0 0 3px rgba($primary, 0.15);
+    }
+  }
+
+  .textarea {
+    min-height: 110px;
+    resize: vertical;
+    margin-bottom: 12px;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    font-weight: 600;
+
+    &.btn-sm {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    &.btn-primary {
+      background: $primary;
+      color: #fff;
+    }
+
+    &.btn-secondary {
+      background: #262a33;
+      color: #fff;
+      border: 1px solid $border;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .state-msg {
+    padding: 14px 0;
+    color: $muted;
+
+    &.error {
+      color: #ff8f8f;
+    }
+  }
+
+  .booking-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .booking-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      text-align: left;
+      padding: 14px 10px;
+      border-bottom: 1px solid $border;
+      vertical-align: top;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    th {
+      color: $muted;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+  }
+
+  .td-title {
+    font-weight: 600;
+    color: $text;
+  }
+
+  .td-sub {
+    color: $muted;
+    font-size: 12px;
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+
+    &.success {
+      background: rgba($success, 0.12);
+      color: $success;
+      border-color: rgba($success, 0.4);
+    }
+
+    &.info {
+      background: rgba($info, 0.12);
+      color: $info;
+      border-color: rgba($info, 0.4);
+    }
+
+    &.danger {
+      background: rgba($danger, 0.12);
+      color: $danger;
+      border-color: rgba($danger, 0.4);
+    }
+
+    &.muted {
+      background: rgba(255, 255, 255, 0.06);
+      color: $muted;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .pagination-actions {
+      display: flex;
+      gap: 10px;
+    }
+  }
+
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 2000;
+  }
+
+  .drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(760px, 100%);
+    height: 100%;
+    background: #101116;
+    border-left: 1px solid $border;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-bottom: 1px solid $border;
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+  }
+
+  .drawer-close {
+    background: transparent;
+    color: #fff;
+    border: 1px solid $border;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .drawer-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 18px;
+    border-bottom: 1px solid $border;
+    flex-wrap: wrap;
+  }
+
+  .drawer-tab {
+    border: 1px solid $border;
+    background: transparent;
+    color: $text;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: 0.2s ease;
+
+    &.active {
+      background: $primary;
+      border-color: $primary;
+    }
+  }
+
+  .drawer-body {
+    padding: 18px;
+    overflow: auto;
+  }
+
+  .detail-section {
+    background: $panel;
+    border: 1px solid $border;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+
+    h3 {
+      margin: 0 0 14px;
+      font-size: 16px;
+    }
+  }
+
+  .section-header-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+
+    div {
+      color: $muted;
+      font-size: 14px;
+
+      span {
+        color: $text;
+        font-weight: 600;
+        margin-right: 6px;
+      }
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .travellers-list,
+  .payments-list,
+  .add-traveller-list,
+  .supporting-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .traveller-card,
+  .payment-card,
+  .add-traveller-card,
+  .doc-card,
+  .supporting-item {
+    background: $panel-2;
+    border: 1px solid $border;
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .traveller-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+    }
+  }
+
+  .traveller-name {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .traveller-doc-summary {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .inline-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .traveller-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .traveller-chip {
+    border: 1px solid $border;
+    background: transparent;
+    color: $text;
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: 0.2s ease;
+
+    &.active {
+      background: rgba($primary, 0.18);
+      border-color: rgba($primary, 0.55);
+    }
+  }
+
+  .documents-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .doc-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .doc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: $text;
+  }
+
+  .doc-body {
+    display: grid;
+    gap: 6px;
+  }
+
+  .doc-link {
+    color: #b8c7ff;
+    text-decoration: underline;
+    font-size: 13px;
+  }
+
+  .supporting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+}
+
+.btn-danger-outline {
+  background: rgba($danger, 0.08) !important;
+  color: $danger !important;
+  border: 1px solid rgba($danger, 0.35) !important;
+}
+
+.supporting-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mini-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.mini-modal {
+  width: min(520px, 100%);
+  background: #121318;
+  border: 1px solid $border;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.mini-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid $border;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+  }
+}
+
+.mini-modal-body {
+  padding: 16px;
+}
+
+.mini-close {
+  background: transparent;
+  color: $text;
+  border: 1px solid $border;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 20px;
+  cursor: pointer;
+}

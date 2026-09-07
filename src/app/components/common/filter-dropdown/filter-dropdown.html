@@ -1,0 +1,7 @@
+<p-menu #dropdown [popup]="true" styleClass="p-0">
+  <ng-template pTemplate="start">
+    <div class="p-3" (click)="$event.stopPropagation()">
+      <ng-container *ngTemplateOutlet="contentTemplate; context: { close: close.bind(this) }"></ng-container>
+    </div>
+  </ng-template>
+</p-menu>

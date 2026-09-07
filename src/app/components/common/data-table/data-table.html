@@ -1,0 +1,62 @@
+<div>
+  <p-table
+    [columns]="columns()"
+    [value]="loading() ? skeletonRows : data()"
+    [paginator]="true"
+    [showCurrentPageReport]="true"
+    [rows]="rows()"
+    [totalRecords]="totalRecords()"
+    [lazy]="true"
+    (onLazyLoad)="onLazyLoad($event)"
+    [sortField]="sortField()"
+    [sortOrder]="sortOrder()"
+    [rowsPerPageOptions]="[5, 10, 20, 50]"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
+    stripedRows
+  >
+    <!-- header  -->
+    <ng-template #header let-columns>
+      <tr>
+        @for (col of columns; track col) {
+          <th [pSortableColumn]="col.sortable ? col.field : ''">
+            {{ col.header }}
+            @if (col.sortable) {
+              <p-sortIcon [field]="col.field" />
+            }
+          </th>
+        }
+      </tr>
+    </ng-template>
+    <!-- body  -->
+    <ng-template #body let-rowData let-columns="columns">
+      <tr>
+        @for (col of columns; track col) {
+          <td>
+            @if (loading()) {
+              <p-skeleton height="0.875rem" />
+            } @else {
+              @if (col.type === 'template' && getTemplate(col.field)) {
+                <ng-container *ngTemplateOutlet="getTemplate(col.field); context: { $implicit: rowData }">
+                </ng-container>
+              } @else {
+                {{ rowData[col.field] }}
+              }
+            }
+          </td>
+        }
+      </tr>
+    </ng-template>
+    @if (!loading()) {
+      <ng-template #emptymessage>
+        <tr>
+          <td [colSpan]="columns().length" class="text-center p-8">
+            <div class="flex justify-start items-center gap-2 text-gray-400">
+              <i class="pi pi-inbox text-4xl"></i>
+              <span>No data found</span>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    }
+  </p-table>
+</div>

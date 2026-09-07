@@ -1,0 +1,262 @@
+<div class="leads-dashboard pb-16">
+  <!-- <app-page-toolbar
+    [option]="{
+      title: 'Leads Dashboard'
+    }"
+  ></app-page-toolbar> -->
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <p-card styleClass="kpi-card clickable">
+      <div class="kpi-label">Total Leads</div>
+      <div class="kpi-value">{{ summary().totalLeads }}</div>
+      <div class="kpi-sub">All active enquiries</div>
+    </p-card>
+
+    <p-card styleClass="kpi-card clickable">
+      <div class="kpi-label">New Leads</div>
+      <div class="kpi-value">{{ summary().newLeads }}</div>
+      <div class="kpi-sub">Fresh leads to contact</div>
+    </p-card>
+
+    <p-card styleClass="kpi-card clickable">
+      <div class="kpi-label">Today’s Follow-ups</div>
+      <div class="kpi-value">{{ summary().todayFollowups }}</div>
+      <div class="kpi-sub">Action needed today</div>
+    </p-card>
+
+    <p-card styleClass="kpi-card clickable danger-soft">
+      <div class="kpi-label">Overdue Follow-ups</div>
+      <div class="kpi-value">{{ summary().overdueFollowups }}</div>
+      <div class="kpi-sub">Need urgent attention</div>
+    </p-card>
+
+    <p-card styleClass="kpi-card clickable">
+      <div class="kpi-label">Quoted Leads</div>
+      <div class="kpi-value">{{ summary().quotedLeads }}</div>
+      <div class="kpi-sub">Quotes already sent</div>
+    </p-card>
+
+    <p-card styleClass="kpi-card clickable success-soft">
+      <div class="kpi-label">Converted Leads</div>
+      <div class="kpi-value">{{ summary().convertedLeads }}</div>
+      <div class="kpi-sub">Successfully booked</div>
+    </p-card>
+
+    <p-card styleClass="kpi-card clickable">
+      <div class="kpi-label">Lost Leads</div>
+      <div class="kpi-value">{{ summary().lostLeads }}</div>
+      <div class="kpi-sub">Did not convert</div>
+    </p-card>
+
+    <p-card styleClass="kpi-card clickable">
+      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-value">{{ summary().conversionRate }}%</div>
+      <div class="kpi-sub">Lead to booking ratio</div>
+    </p-card>
+  </div>
+
+  <!-- Filters -->
+  <p-card styleClass="section-card mt-5">
+    <div class="section-header">
+      <div>
+        <h3 class="section-title">Filters</h3>
+        <p class="section-subtitle">Narrow dashboard data quickly</p>
+      </div>
+
+      <div class="filter-actions">
+        <button pButton type="button" label="Clear" severity="secondary" (click)="clearFilters()"></button>
+        <button pButton type="button" label="Apply" (click)="applyFilters()"></button>
+        <button pButton type="button" label="Export" severity="contrast" (click)="exportLeads()"></button>
+        <button pButton type="button" label="Add Lead" severity="success" (click)="addLead()"></button>
+      </div>
+    </div>
+
+    <form [formGroup]="filterForm" class="filters-grid">
+      <div class="field">
+        <label>Date Range</label>
+        <p-datePicker
+          formControlName="dateRange"
+          selectionMode="range"
+          [showIcon]="true"
+          appendTo="body"
+          placeholder="Select date range"
+        />
+      </div>
+
+      <div class="field">
+        <label>Assigned Agent</label>
+        <p-select
+          formControlName="assignedAgent"
+          [options]="agentOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="Select agent"
+        />
+      </div>
+
+      <div class="field">
+        <label>Source</label>
+        <p-select
+          formControlName="source"
+          [options]="sourceOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="Select source"
+        />
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <p-select
+          formControlName="status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          placeholder="Select status"
+        />
+      </div>
+
+      <div class="field field-span-2">
+        <label>Search</label>
+        <input pInputText formControlName="search" placeholder="Search by name, email, phone, lead code..." />
+      </div>
+    </form>
+  </p-card>
+
+  <!-- Charts -->
+  <div class="chart-grid mt-5">
+    <p-card styleClass="section-card chart-card">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">Leads by Status</h3>
+          <p class="section-subtitle">Current sales pipeline distribution</p>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <p-chart type="bar" [data]="statusChartData" [options]="chartOptions"></p-chart>
+      </div>
+    </p-card>
+
+    <p-card styleClass="section-card chart-card">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">Leads by Source</h3>
+          <p class="section-subtitle">Where your enquiries are coming from</p>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <p-chart type="doughnut" [data]="sourceChartData" [options]="chartOptions"></p-chart>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Follow-up Panels -->
+  <div class="followup-grid mt-5">
+    <p-card styleClass="section-card">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">Today’s Follow-ups</h3>
+          <p class="section-subtitle">Leads that need action today</p>
+        </div>
+      </div>
+
+      <div class="followup-list">
+        @for (item of todayFollowups(); track item.id) {
+          <div class="followup-item">
+            <div class="followup-main">
+              <div class="followup-top">
+                <div class="lead-name">{{ item.name }}</div>
+                <p-tag [value]="item.status" [severity]="getFollowupSeverity(item.status)"></p-tag>
+              </div>
+
+              <div class="followup-meta">
+                <span>{{ item.leadCode }}</span>
+                <span>•</span>
+                <span>{{ item.destination }}</span>
+                <span>•</span>
+                <span>{{ item.assignedAgent }}</span>
+              </div>
+
+              <div class="followup-date">{{ formatDateTime(item.followUpDate) }}</div>
+
+              @if (item.note) {
+                <div class="followup-note">{{ item.note }}</div>
+              }
+            </div>
+
+            <div class="followup-actions">
+              <button pButton size="small" label="View" severity="secondary" (click)="viewLead(item)"></button>
+              <button pButton size="small" label="Follow-up" (click)="updateFollowup(item)"></button>
+            </div>
+          </div>
+        }
+      </div>
+    </p-card>
+
+    <p-card styleClass="section-card overdue-card">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">Overdue Follow-ups</h3>
+          <p class="section-subtitle">These need immediate attention</p>
+        </div>
+      </div>
+
+      <div class="followup-list">
+        @for (item of overdueFollowups(); track item.id) {
+          <div class="followup-item overdue-item">
+            <div class="followup-main">
+              <div class="followup-top">
+                <div class="lead-name">{{ item.name }}</div>
+                <p-tag value="overdue" severity="danger"></p-tag>
+              </div>
+
+              <div class="followup-meta">
+                <span>{{ item.leadCode }}</span>
+                <span>•</span>
+                <span>{{ item.destination }}</span>
+                <span>•</span>
+                <span>{{ item.assignedAgent }}</span>
+              </div>
+
+              <div class="followup-date">{{ formatDateTime(item.followUpDate) }}</div>
+
+              @if (item.note) {
+                <div class="followup-note">{{ item.note }}</div>
+              }
+            </div>
+
+            <div class="followup-actions">
+              <button pButton size="small" label="View" severity="secondary" (click)="viewLead(item)"></button>
+              <button pButton size="small" label="Resolve" severity="danger" (click)="updateFollowup(item)"></button>
+            </div>
+          </div>
+        }
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Recent Leads -->
+  <p-card styleClass="section-card mt-5">
+    <div class="section-header">
+      <div>
+        <h3 class="section-title">Recent Leads</h3>
+        <p class="section-subtitle">Latest enquiries and their current progress</p>
+      </div>
+    </div>
+
+    <app-data-table
+      [columns]="recentLeadsColumns"
+      [data]="recentLeads()"
+      [totalRecords]="recentLeads().length"
+      [rows]="10"
+      [loading]="false"
+      (lazyLoad)="onLazyLoad($event)"
+    ></app-data-table>
+  </p-card>
+</div>

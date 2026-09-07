@@ -1,0 +1,865 @@
+<div class="pb-16">
+  <div>
+    <!-- page-toolbar  -->
+    <div>
+      <app-page-toolbar
+        #toolbar
+        [option]="{
+          title: 'Leads Management',
+          requireSync: true,
+        }"
+        [filterTemplate]="filterTpl"
+        (onSearch)="onSearch($event)"
+        (onActionNew)="showNewLeadForm = true"
+        (onActionSync)="handleSync()"
+        [syncLoading]="syncLoading()"
+        [filterCount]="getFilterCount()"
+      >
+        <!-- filter-dropdown  -->
+        <ng-template #filterTpl let-close="close">
+          <form [formGroup]="filterForm" class="flex flex-col gap-3">
+            <div class="flex gap-2 items-center">
+              <label class="flex-1">Status</label>
+              <p-select
+                [options]="statusFilterOptions"
+                placeholder="Select a status"
+                formControlName="status"
+                optionLabel="label"
+                optionValue="value"
+                size="small"
+                class="w-42"
+                [showClear]="true"
+              />
+            </div>
+
+            @if (role === 'admin') {
+              <div class="flex gap-2 items-center">
+                <label class="flex-1">Agent</label>
+                <p-select
+                  [options]="sales()"
+                  formControlName="assignedAgentId"
+                  placeholder="Select an Agent"
+                  optionLabel="name"
+                  optionValue="id"
+                  size="small"
+                  class="w-42"
+                  [showClear]="true"
+                />
+              </div>
+            }
+            <div class="flex gap-2 items-center">
+              <label class="flex-1">Source</label>
+              <p-select
+                [options]="sourceTypeFilterOptions"
+                formControlName="source"
+                placeholder="Select a source"
+                optionLabel="label"
+                optionValue="value"
+                size="small"
+                class="w-42"
+                [showClear]="true"
+              />
+            </div>
+
+            <div class="flex gap-2 items-center">
+              <label class="flex-1">Departure</label>
+              <p-select
+                [options]="departureTypeOptions"
+                formControlName="departure_type"
+                placeholder="Select a departure"
+                optionLabel="label"
+                optionValue="value"
+                size="small"
+                class="w-42"
+                [showClear]="true"
+              />
+            </div>
+
+            <div class="flex justify-end gap-2 mt-2">
+              <p-button label="Clear" severity="secondary" (onClick)="clearFilter(); close()" size="small" />
+              <p-button label="Apply" severity="primary" (onClick)="applyFilter(); close()" size="small" />
+            </div>
+          </form> </ng-template
+      ></app-page-toolbar>
+    </div>
+    <!-- data-table  -->
+    <div>
+      @if (leadsState$ | async; as state) {
+        <app-data-table
+          [columns]="columns"
+          [data]="state.data"
+          [totalRecords]="state.total"
+          [rows]="5"
+          [loading]="state.loading"
+          [sortField]="currentQuery.sort ?? ''"
+          [sortOrder]="currentQuery.order === 'asc' ? 1 : -1"
+          (lazyLoad)="onLazyLoad($event)"
+        >
+          <!-- actions  -->
+          <ng-template #actions let-row>
+            <p-tieredmenu #menu [model]="currentMenuItems" [popup]="true" appendTo="body"></p-tieredmenu>
+            <p-button
+              icon="pi pi-ellipsis-v"
+              severity="secondary"
+              (click)="openRowMenu($event, row, menu)"
+              size="small"
+            />
+          </ng-template>
+          <!-- ID clickable -->
+          <ng-template #id let-row>
+            @if (!row.assigned_agent_name || row.assigned_agent_name === '–') {
+              <p-overlaybadge severity="danger">
+                <a class="text-blue-600 hover:underline cursor-pointer" [routerLink]="['/leads', row.id]">
+                  {{ row.id }}
+                </a>
+              </p-overlaybadge>
+            } @else {
+              <a class="text-blue-600 hover:underline cursor-pointer" [routerLink]="['/leads', row.id]">
+                {{ row.id }}
+              </a>
+            }
+          </ng-template>
+
+          <!-- Lead Code clickable -->
+          <ng-template #lead_code let-row>
+            <a
+              class="text-blue-600 hover:underline cursor-pointer"
+              [ngClass]="{ 'bg-red-600/30': !row.assigned_agent_name || row.assigned_agent_name === '–' }"
+              [routerLink]="['/leads', row.id]"
+            >
+              {{ row.lead_code }}
+            </a>
+          </ng-template>
+
+          <!-- Lead status color coded  -->
+          <ng-template #status let-row>
+            <p-tag
+              [value]="row.status | titlecase"
+              [severity]="getStatusSeverity(row.status)"
+              [rounded]="true"
+              class="font-normal!"
+            />
+          </ng-template>
+
+          <!-- Lead follow-up status color coded -->
+          <ng-template #follow_up_status let-row>
+            <p-tag
+              [value]="row.follow_up_status | titlecase"
+              [rounded]="true"
+              [severity]="getFollowUpSeverity(row.follow_up_status)"
+              class="font-normal!"
+            />
+          </ng-template>
+
+          <!-- Lead remark popover -->
+          <ng-template #remark let-row>
+            <p-button
+              (click)="op.toggle($event)"
+              icon="pi pi-info-circle"
+              label="Show"
+              severity="info"
+              size="small"
+              variant="text"
+            />
+            <p-popover #op styleClass="max-w-sm" appendTo="body">
+              <span>{{ row.remark }}</span>
+            </p-popover>
+          </ng-template>
+        </app-data-table>
+      }
+    </div>
+  </div>
+
+  <!-- NEW LEAD -->
+  <app-form-dialog
+    [visible]="showNewLeadForm"
+    [title]="'New Lead'"
+    [submitLabel]="'Create'"
+    [form]="newLeadForm"
+    (onVisibleChange)="showNewLeadForm = $event"
+    (onSubmit)="handleNewLead()"
+    [submissionInProgress]="createLeadInProgress()"
+  >
+    <ng-template let-form>
+      <div [formGroup]="form" class="grid grid-cols-2 gap-x-6 gap-y-4">
+        <!-- Name -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Name <span class="text-red-500">*</span></label>
+          <input
+            pInputText
+            formControlName="name"
+            placeholder="Full name"
+            [ngClass]="{ 'ng-dirty ng-invalid': form.get('name')?.invalid && form.get('name')?.touched }"
+          />
+          @if (form.get('name')?.invalid && form.get('name')?.touched) {
+            @if (form.get('name')?.hasError('required')) {
+              <small class="text-red-500">Name is required.</small>
+            }
+            @if (form.get('name')?.hasError('pattern')) {
+              <small class="text-red-500">Enter a valid name (only letters, spaces, and dots are allowed).</small>
+            }
+          }
+        </div>
+
+        <!-- Email -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Email <span class="text-red-500">*</span></label>
+          <input
+            pInputText
+            formControlName="email"
+            placeholder="email@example.com"
+            [ngClass]="{ 'ng-dirty ng-invalid': form.get('email')?.invalid && form.get('email')?.touched }"
+          />
+          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <small class="text-red-500">
+              @if (form.get('email')?.errors?.['required']) {
+                Email is required.
+              }
+              @if (form.get('email')?.errors?.['email']) {
+                Invalid email format.
+              }
+            </small>
+          }
+        </div>
+
+        <!-- Contact No -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Contact No. <span class="text-red-500">*</span></label>
+          <input pInputText formControlName="contact_no" placeholder="+91 XXXXX XXXXX" />
+          @if (form.get('contact_no')?.invalid && form.get('contact_no')?.touched) {
+            @if (form.get('contact_no')?.hasError('required')) {
+              <small class="text-red-500">Contact number is required.</small>
+            }
+            @if (form.get('contact_no')?.hasError('pattern')) {
+              <small class="text-red-500">Enter a valid 10-digit number or prefixed with('+91' or '+91-').</small>
+            }
+          }
+        </div>
+
+        <!-- Destination -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Destination <span class="text-red-500">*</span></label>
+          <input pInputText formControlName="destination" placeholder="e.g. Bali, Paris" />
+          @if (form.get('destination')?.invalid && form.get('destination')?.touched) {
+            <small class="text-red-500">Destination is required.</small>
+          }
+        </div>
+
+        <!-- Travel Date -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Travel Date <span class="text-red-500">*</span></label>
+          <p-datePicker
+            formControlName="travel_date"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            placeholder="Select date"
+            [minDate]="today"
+            appendTo="body"
+          />
+          @if (form.get('travel_date')?.invalid && form.get('travel_date')?.touched) {
+            <small class="text-red-500">Travel date is required.</small>
+          }
+        </div>
+
+        <!-- Travellers Count -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Travellers <span class="text-red-500">*</span></label>
+          <p-inputNumber formControlName="travellers_count" [min]="1" placeholder="No. of travellers" />
+          @if (form.get('travellers_count')?.invalid && form.get('travellers_count')?.touched) {
+            <small class="text-red-500">
+              @if (form.get('travellers_count')?.errors?.['required']) {
+                Travellers count is required.
+              }
+              @if (form.get('travellers_count')?.errors?.['min']) {
+                At least 1 traveller required.
+              }
+            </small>
+          }
+        </div>
+
+        <!-- Budget -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Budget <span class="text-red-500">*</span></label>
+          <input pInputText formControlName="budget" placeholder="e.g. ₹50,000" />
+          @if (form.get('budget')?.invalid && form.get('budget')?.touched) {
+            <small class="text-red-500">Budget is required.</small>
+          }
+        </div>
+
+        <!-- Source -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Source</label>
+          <p-select
+            formControlName="source_type"
+            [options]="sourceTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select a source"
+            appendTo="body"
+          />
+        </div>
+
+        <!-- Departure type -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Departure <span class="text-red-500">*</span></label>
+          <p-select
+            formControlName="departure_type"
+            [options]="departureTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select a departure"
+            appendTo="body"
+          />
+          @if (form.get('departure_type')?.invalid && form.get('departure_type')?.touched) {
+            <small class="text-red-500">Departure type is required.</small>
+          }
+        </div>
+
+        <!-- Status -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Status</label>
+          <p-select formControlName="status" [options]="statusOptions" optionLabel="label" optionValue="value" />
+        </div> -->
+
+        <!-- Follow-up Status -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Status</label>
+          <p-select
+            formControlName="follow_up_status"
+            [options]="followUpStatusOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div> -->
+
+        <!-- Follow-up Date -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Date <span class="text-red-500">*</span></label>
+          <p-datePicker
+            formControlName="follow_up_date"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            placeholder="Select date"
+            [minDate]="today"
+            appendTo="body"
+          />
+          @if (form.get('follow_up_date')?.invalid && form.get('follow_up_date')?.touched) {
+            <small class="text-red-500">Follow-up date is required.</small>
+          }
+        </div> -->
+
+        <!-- Assigned Agent -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Assigned Agent</label>
+          <p-select
+            formControlName="assigned_agent_id"
+            [options]="sales()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Select agent"
+            (onChange)="onAgentSelect($event)"
+          />
+        </div> -->
+
+        <!-- Remark -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Remark <span class="text-red-500">*</span></label>
+          <textarea
+            pTextarea
+            formControlName="remark"
+            rows="3"
+            placeholder="Any additional notes..."
+            class="w-full resize-none"
+            fluid
+          ></textarea>
+          @if (form.get('remark')?.invalid && form.get('remark')?.touched) {
+            <small class="text-red-500">Remark is required.</small>
+          }
+        </div>
+      </div>
+    </ng-template>
+  </app-form-dialog>
+
+  <!-- UPDATE LEAD -->
+  <app-form-dialog
+    [visible]="showUpdateLeadForm"
+    [title]="'Update Lead'"
+    [submitLabel]="'Save'"
+    [form]="updateLeadForm"
+    (onVisibleChange)="showUpdateLeadForm = $event"
+    (onSubmit)="handleUpdateLead()"
+    [submissionInProgress]="updateLeadInProgress()"
+  >
+    <ng-template let-form>
+      <div [formGroup]="form" class="grid grid-cols-2 gap-x-6 gap-y-4">
+        <!-- Name -->
+        @if (role === 'admin') {
+          <div class="col-span-2 flex flex-col gap-1">
+            <label class="font-semibold text-sm">Name <span class="text-red-500">*</span></label>
+            <input
+              pInputText
+              formControlName="name"
+              placeholder="Full name"
+              [class.ng-invalid]="form.get('name')?.invalid && form.get('name')?.touched"
+              [class.ng-dirty]="form.get('name')?.dirty"
+            />
+            @if (form.get('name')?.invalid && form.get('name')?.touched) {
+              @if (form.get('name')?.hasError('required')) {
+                <small class="text-red-500">Name is required.</small>
+              }
+              @if (form.get('name')?.hasError('pattern')) {
+                <small class="text-red-500">Enter a valid name (only letters, spaces, and dots are allowed).</small>
+              }
+            }
+          </div>
+        }
+
+        <!-- Email -->
+        @if (role === 'admin') {
+          <div class="col-span-2 flex flex-col gap-1">
+            <label class="font-semibold text-sm">Email <span class="text-red-500">*</span></label>
+            <input
+              pInputText
+              formControlName="email"
+              placeholder="email@example.com"
+              [class.ng-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+              [class.ng-dirty]="form.get('email')?.dirty"
+            />
+            @if (form.get('email')?.invalid && form.get('email')?.touched) {
+              <small class="text-red-500">
+                @if (form.get('email')?.errors?.['required']) {
+                  Email is required.
+                }
+                @if (form.get('email')?.errors?.['email']) {
+                  Invalid email format.
+                }
+              </small>
+            }
+          </div>
+        }
+
+        <!-- Contact No -->
+        @if (role === 'admin') {
+          <div class="col-span-2 flex flex-col gap-1">
+            <label class="font-semibold text-sm">Contact No. <span class="text-red-500">*</span></label>
+            <input pInputText formControlName="contact_no" placeholder="+91 XXXXX XXXXX" />
+            @if (form.get('contact_no')?.invalid && form.get('contact_no')?.touched) {
+              @if (form.get('contact_no')?.hasError('required')) {
+                <small class="text-red-500">Contact number is required.</small>
+              }
+              @if (form.get('contact_no')?.hasError('pattern')) {
+                <small class="text-red-500">Enter a valid 10-digit number or prefixed with('+91' or '+91-').</small>
+              }
+            }
+          </div>
+        }
+
+        <!-- Destination -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Destination <span class="text-red-500">*</span></label>
+          <input pInputText formControlName="destination" placeholder="e.g. Bali, Paris" />
+          @if (form.get('destination')?.invalid && form.get('destination')?.touched) {
+            <small class="text-red-500">Destination is required.</small>
+          }
+        </div>
+
+        <!-- Travel Date -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Travel Date <span class="text-red-500">*</span></label>
+          <p-datePicker
+            formControlName="travel_date"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            placeholder="Select date"
+            [minDate]="today"
+            appendTo="body"
+          />
+          @if (form.get('travel_date')?.invalid && form.get('travel_date')?.touched) {
+            <small class="text-red-500">Travel date is required.</small>
+          }
+        </div>
+
+        <!-- Travellers Count -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Travellers <span class="text-red-500">*</span></label>
+          <p-inputNumber formControlName="travellers_count" [min]="1" placeholder="No. of travellers" />
+          @if (form.get('travellers_count')?.invalid && form.get('travellers_count')?.touched) {
+            <small class="text-red-500">
+              @if (form.get('travellers_count')?.errors?.['required']) {
+                Travellers count is required.
+              }
+              @if (form.get('travellers_count')?.errors?.['min']) {
+                At least 1 traveller required.
+              }
+            </small>
+          }
+        </div>
+
+        <!-- Budget -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Budget <span class="text-red-500">*</span></label>
+          <input pInputText formControlName="budget" placeholder="e.g. ₹50,000" />
+          @if (form.get('budget')?.invalid && form.get('budget')?.touched) {
+            <small class="text-red-500">Budget is required.</small>
+          }
+        </div>
+
+        <!-- Source -->
+        @if (role === 'admin') {
+          <div class="flex flex-col gap-1">
+            <label class="font-semibold text-sm">Source</label>
+            <p-select
+              formControlName="source_type"
+              [options]="sourceTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select source"
+            />
+          </div>
+        }
+
+        <!-- Departure type -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Departure <span class="text-red-500">*</span></label>
+          <p-select
+            formControlName="departure_type"
+            [options]="departureTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select a departure"
+            appendTo="body"
+          />
+          @if (form.get('departure_type')?.invalid && form.get('departure_type')?.touched) {
+            <small class="text-red-500">Departure type is required.</small>
+          }
+        </div>
+
+        <!-- Status -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Status</label>
+          <p-select
+            formControlName="status"
+            [options]="filteredStatusOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div> -->
+
+        <!-- Follow-up Status -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Status</label>
+          <p-select
+            formControlName="follow_up_status"
+            [options]="followUpStatusOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div> -->
+
+        <!-- Follow-up Date -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Date <span class="text-red-500">*</span></label>
+          <p-datePicker
+            formControlName="follow_up_date"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            placeholder="Select date"
+            [minDate]="today"
+            appendTo="body"
+          />
+          @if (form.get('follow_up_date')?.invalid && form.get('follow_up_date')?.touched) {
+            <small class="text-red-500">Follow-up date is required.</small>
+          }
+        </div> -->
+
+        <!-- Assigned Agent -->
+        <!-- <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Assigned Agent</label>
+          <p-select
+            formControlName="assigned_agent_id"
+            [options]="sales()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Select agent"
+            (onChange)="onUpdateAgentSelect($event)"
+          />
+        </div> -->
+
+        <!-- Remark -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Remark <span class="text-red-500">*</span></label>
+          <textarea
+            pTextarea
+            formControlName="remark"
+            rows="3"
+            placeholder="Any additional notes..."
+            class="w-full resize-none"
+          ></textarea>
+          @if (form.get('remark')?.invalid && form.get('remark')?.touched) {
+            <small class="text-red-500">Remark is required.</small>
+          }
+        </div>
+      </div>
+    </ng-template>
+  </app-form-dialog>
+
+  <!-- UPDATE FOLLOWUP  -->
+  <app-form-dialog
+    [visible]="showUpdateFollowupForm"
+    [title]="'Update Follow-up'"
+    [submitLabel]="'Save'"
+    [form]="updateFollowupForm"
+    (onVisibleChange)="showUpdateFollowupForm = $event"
+    (onSubmit)="handleUpdateFollowup()"
+    [submissionInProgress]="updateFollowupInProgress()"
+  >
+    <ng-template let-form>
+      <div [formGroup]="form" class="flex flex-col gap-4">
+        @if (isFollowUpOverdue) {
+          <p-message severity="warn" styleClass="w-full">
+            ⚠️ You are resolving a missed follow-up. Please explain the outcome before rescheduling.
+          </p-message>
+        }
+
+        <!-- Follow-up Status -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Status <span class="text-red-500">*</span></label>
+          <p-select
+            formControlName="followUpStatus"
+            [options]="followUpStatusOptions"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+          />
+          @if (
+            (form.get('followUpStatus')?.invalid && form.get('followUpStatus')?.touched) ||
+            (form.get('followUpStatus')?.value === 'pending' && form.get('followUpStatus')?.touched)
+          ) {
+            <small class="text-red-500">Follow-up status is required.</small>
+          }
+        </div>
+
+        <!-- Follow-up Date -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Date</label>
+          <p-datePicker
+            formControlName="followUpDate"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            placeholder="Select date"
+            appendTo="body"
+          />
+          @if (form.get('followUpDate')?.invalid && form.get('followUpDate')?.touched) {
+            <small class="text-red-500">Follow-up date is required.</small>
+          }
+        </div>
+
+        <!-- Note -->
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">
+            Note
+            @if (isFollowUpOverdue) {
+              <span class="text-red-500">*</span>
+            } @else {
+              <span class="text-red-500">*</span>
+            }
+          </label>
+          <textarea
+            pTextarea
+            formControlName="note"
+            rows="3"
+            placeholder="Any additional notes..."
+            class="w-full resize-none"
+            fluid
+            [ngClass]="{
+              'ng-dirty ng-invalid': form.get('note')?.invalid && form.get('note')?.touched,
+            }"
+          ></textarea>
+
+          @if (form.get('note')?.invalid && form.get('note')?.touched) {
+            <small class="text-red-500">
+              @if (isFollowUpOverdue) {
+                Note is required for missed/overdue follow-ups.
+              }
+            </small>
+          }
+          @if (form.get('note')?.invalid && form.get('note')?.touched) {
+            <small class="text-red-500">Note is required.</small>
+          }
+        </div>
+      </div>
+    </ng-template>
+  </app-form-dialog>
+
+  <!-- ASSIGN LEAD FORM  -->
+  <app-form-dialog
+    [visible]="showAssignLeadForm"
+    [title]="'Assign Lead'"
+    [submitLabel]="'Save'"
+    [form]="assignLeadForm"
+    (onVisibleChange)="showAssignLeadForm = $event"
+    (onSubmit)="handleAssignLead()"
+  >
+    <ng-template let-form>
+      <!-- selected lead details  -->
+      @if (selectedLead) {
+        <div class="mb-3">
+          <div class="flex items-center justify-between mb-1">
+            <div>
+              ID <span class="font-semibold">{{ selectedLead.id }}</span>
+            </div>
+            <div>
+              <span class="font-semibold">{{ selectedLead.lead_code }}</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">{{ selectedLead.name }}</div>
+            <div class="font-semibold">{{ selectedLead.destination }}</div>
+          </div>
+        </div>
+      }
+
+      <!-- selected lead form  -->
+      <div [formGroup]="form" class="grid grid-cols-2 gap-x-6 gap-y-4">
+        <!-- Assigned Agent -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Agent <span class="text-red-500">*</span></label>
+          <p-select
+            formControlName="assignedAgentId"
+            [options]="salesOptions()"
+            optionLabel="label"
+            optionValue="id"
+            placeholder="Select an agent"
+            appendTo="body"
+            [invalid]="form.get('assignedAgentId')?.invalid && form.get('assignedAgentId')?.touched"
+          />
+          @if (
+            form.get('assignedAgentId')?.invalid &&
+            (form.get('assignedAgentId')?.touched || form.get('assignedAgentId')?.dirty)
+          ) {
+            <small class="text-red-500">Agent is required.</small>
+          }
+        </div>
+
+        <!-- follow up date  -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Followup Date <span class="text-red-500">*</span></label>
+          <p-datePicker
+            formControlName="followupDate"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            placeholder="Select date"
+            [minDate]="today"
+            appendTo="body"
+          />
+          @if (form.get('followupDate')?.invalid && form.get('followupDate')?.touched) {
+            <small class="text-red-500">Followup date is required.</small>
+          }
+        </div>
+
+        <!-- reason  -->
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Note</label>
+          <textarea
+            pTextarea
+            formControlName="note"
+            rows="3"
+            placeholder="Any additional note..."
+            class="w-full resize-none"
+          ></textarea>
+        </div>
+      </div>
+    </ng-template>
+  </app-form-dialog>
+</div>
+<app-form-dialog
+  [visible]="showUpdateStatusForm"
+  [title]="role === 'admin' ? 'Update Lead Status (Admin)' : 'Update Lead Status'"
+  [submitLabel]="'Save'"
+  [form]="updateStatusForm"
+  (onVisibleChange)="showUpdateStatusForm = $event"
+  (onSubmit)="handleSubmitLeadStatus()"
+  [submissionInProgress]="updateStatusInProgress()"
+>
+  <ng-template let-form>
+    <div [formGroup]="form" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Status <span class="text-red-500">*</span></label>
+        <p-select
+          formControlName="status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          appendTo="body"
+        />
+        @if (form.get('status')?.invalid && form.get('status')?.touched) {
+          <small class="text-red-500">Status is required.</small>
+        }
+      </div>
+
+      @if (role === 'admin' && isReopeningLostOrClosed(selectedLeadStatus, form.get('status')?.value)) {
+        <p-message severity="warn" styleClass="w-full">
+          ⚠️ You are reopening a lost/closed lead. Please explain why and set the next follow-up state.
+        </p-message>
+
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Status <span class="text-red-500">*</span></label>
+          <p-select
+            formControlName="followUpStatus"
+            [options]="followUpStatusOptions"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+            appendTo="body"
+          />
+          @if (form.get('followUpStatus')?.invalid && form.get('followUpStatus')?.touched) {
+            <small class="text-red-500">Follow-up status is required.</small>
+          }
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-sm">Follow-up Date</label>
+          <p-datePicker
+            formControlName="followUpDate"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            placeholder="Select date"
+            appendTo="body"
+          />
+          @if (form.get('followUpDate')?.invalid && form.get('followUpDate')?.touched) {
+            <small class="text-red-500">Follow-up date is required.</small>
+          }
+        </div>
+      }
+
+      @if (role === 'sales' && isClosingOrLosing(form.get('status')?.value)) {
+        <p-message severity="warn" styleClass="w-full">
+          ⚠️ A note is required when marking a lead as lost or closed.
+        </p-message>
+      }
+
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">
+          Note
+          @if (
+            (role === 'sales' && isClosingOrLosing(form.get('status')?.value)) ||
+            (role === 'admin' && isReopeningLostOrClosed(selectedLeadStatus, form.get('status')?.value))
+          ) {
+            <span class="text-red-500">*</span>
+          }
+        </label>
+        <textarea
+          pTextarea
+          formControlName="note"
+          rows="3"
+          placeholder="Enter reason / note..."
+          class="w-full resize-none"
+        ></textarea>
+        @if (form.get('note')?.invalid && form.get('note')?.touched) {
+          <small class="text-red-500">Note is required.</small>
+        }
+      </div>
+    </div>
+  </ng-template>
+</app-form-dialog>

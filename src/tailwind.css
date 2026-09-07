@@ -1,0 +1,43 @@
+/* google font poppins  */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+/* google font roboto */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+/* google font inter*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+/* dark mode setup for tailwind  */
+@custom-variant dark (&:where(.app-dark-mode, .app-dark-mode *));
+
+@theme {
+  --font-poppins: 'Poppins', sans-serif;
+  --font-roboto: 'Roboto', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+
+  --color-surface-app-light: #eef2ff;
+  --color-surface-primary-light: #ffffff;
+  --color-surface-secondary-light: #e0e7ff;
+
+  --color-surface-app-dark: #333339;
+  --color-surface-primary-dark: #000000;
+  --color-surface-secondary-dark: #27272a;
+
+  --color-accent-contrast-light: #fafafa;
+  --color-accent-muted-light: #71717a;
+
+  --color-accent-contrast-dark: #18181b;
+  --color-accent-muted-dark: #52525b;
+
+  --color-control-primary-light: #c7d2fe;
+  --color-control-secondary-light: #e0e7ff;
+
+  --color-control-primary-dark: #18181b;
+  --color-control-secondary-dark: #27272a;
+}
+
+/* set default font */
+body {
+  @apply font-inter;
+}

@@ -1,0 +1,10 @@
+<p-dialog [header]="title()" [modal]="true" [visible]="visible()" (onHide)="close()">
+  <form [formGroup]="form()" (ngSubmit)="handleSubmit()">
+    <!-- projected form fields -->
+    <ng-container *ngTemplateOutlet="formFieldsTemplate(); context: { $implicit: form() }" />
+    <div class="flex justify-end gap-2 mt-6">
+      <p-button label="Cancel" severity="secondary" type="button" (click)="close()" size="small" />
+      <p-button [label]="submitLabel()" [loading]="submissionInProgress()" type="submit" size="small" />
+    </div>
+  </form>
+</p-dialog>

@@ -1,0 +1,23 @@
+:host ::ng-deep .p-card {
+  box-shadow: none;
+  border: 1px solid var(--border-subtle);
+}
+:host ::ng-deep .p-timeline-left .p-timeline-event-opposite {
+  display: none;
+}
+
+:host ::ng-deep .p-timeline-left .p-timeline-event-content {
+  width: 100%;
+}
+
+:host ::ng-deep .p-timeline-event-marker {
+  background-color: transparent;
+  border-color: #c4c4c4;
+}
+:host ::ng-deep .p-timeline-event-marker::before {
+  background-color: #3d3d3d;
+}
+
+.app-dark-mode :host ::ng-deep .p-timeline-event-marker::before {
+  background-color: #e4e4e4;
+}

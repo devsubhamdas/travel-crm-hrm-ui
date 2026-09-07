@@ -1,0 +1,680 @@
+<div class="crm-bookings-page">
+  <div class="page-header">
+    <div>
+      <h1>Operations Bookings</h1>
+      <p>Manage confirmed bookings, follow-ups, travellers and documents.</p>
+    </div>
+    <div class="mt-3 flex items-center justify-end">
+      <p-button
+        label="Add"
+        icon="pi pi-plus"
+        severity="primary"
+        size="small"
+        (onClick)="showNewBookingForm = true"
+      ></p-button>
+    </div>
+  </div>
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <input type="text" [(ngModel)]="search" placeholder="Search customer / email / phone" class="form-control" />
+
+      <select [(ngModel)]="status" class="form-control">
+        <option value="">All Status</option>
+        <option *ngFor="let s of bookingStatuses" [value]="s">{{ s }}</option>
+      </select>
+
+      <select [(ngModel)]="paymentStatus" class="form-control">
+        <option value="">All Payment</option>
+        <option *ngFor="let s of paymentStatuses" [value]="s">{{ s }}</option>
+      </select>
+
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilters()">Apply</button>
+        <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <div *ngIf="isLoading" class="state-msg">Loading bookings...</div>
+    <div *ngIf="!isLoading && error" class="state-msg error">{{ error }}</div>
+    <div *ngIf="!isLoading && !error && bookings.length === 0" class="state-msg">No bookings found.</div>
+
+    <div class="booking-table-wrapper" *ngIf="!isLoading && bookings.length">
+      <table class="booking-table">
+        <thead>
+          <tr>
+            <th>Booking</th>
+            <th>Customer</th>
+            <th>Tour</th>
+            <th>Travel Date</th>
+            <th>Guests</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Follow-up</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let b of bookings; trackBy: trackByBookingId">
+            <td>#{{ b.id }}</td>
+            <td>
+              <div class="td-title">{{ b.customer_name || '-' }}</div>
+              <div class="td-sub">{{ b.customer_email || '-' }}</div>
+              <div class="td-sub">{{ b.customer_phone || '-' }}</div>
+            </td>
+            <td>{{ b.tour_title || '-' }}</td>
+            <td>{{ b.travel_date ? (b.travel_date | date: 'MMM d, y') : '-' }}</td>
+            <td>{{ b.guests || 0 }}</td>
+            <td>{{ amountInInr(b.total_amount_paise) | currency: 'INR' }}</td>
+            <td>
+              <span class="badge" [ngClass]="statusClass(b.status)">{{ b.status || '-' }}</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="statusClass(b.payment_status)">{{ b.payment_status || '-' }}</span>
+            </td>
+            <td>
+              <div class="td-title">{{ b.follow_up_status || '-' }}</div>
+              <div class="td-sub">{{ b.follow_up_date ? (b.follow_up_date | date: 'MMM d, y') : '-' }}</div>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-secondary" (click)="openDetails(b.id)">View</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar" *ngIf="!isLoading && bookings.length">
+      <div>Page {{ page }} of {{ totalPages() }}</div>
+      <div class="pagination-actions">
+        <button class="btn btn-secondary btn-sm" (click)="prevPage()" [disabled]="page <= 1">Prev</button>
+        <button class="btn btn-secondary btn-sm" (click)="nextPage()" [disabled]="page >= totalPages()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-overlay" *ngIf="showDrawer" (click)="closeDrawer()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Booking Details</h2>
+        <button class="drawer-close" (click)="closeDrawer()">×</button>
+      </div>
+
+      <div class="drawer-tabs">
+        <button class="drawer-tab" [class.active]="activeDrawerTab === 'overview'" (click)="setDrawerTab('overview')">
+          Overview
+        </button>
+        <button
+          class="drawer-tab"
+          [class.active]="activeDrawerTab === 'travellers'"
+          (click)="setDrawerTab('travellers')"
+        >
+          Travellers
+        </button>
+        <button class="drawer-tab" [class.active]="activeDrawerTab === 'documents'" (click)="setDrawerTab('documents')">
+          Documents
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <div *ngIf="isLoadingDetails" class="state-msg">Loading details...</div>
+        <div *ngIf="!isLoadingDetails && detailsError" class="state-msg error">
+          {{ detailsError }}
+        </div>
+
+        <ng-container *ngIf="!isLoadingDetails && selectedBooking">
+          <!-- OVERVIEW -->
+          <ng-container *ngIf="activeDrawerTab === 'overview'">
+            <div class="detail-section">
+              <h3>Booking Info</h3>
+              <div class="detail-grid">
+                <div><span>ID:</span> #{{ selectedBooking.booking.id }}</div>
+                <div><span>Tour:</span> {{ selectedBooking.booking.tour?.title || '-' }}</div>
+                <div><span>Customer:</span> {{ selectedBooking.booking.customer_name || '-' }}</div>
+                <div><span>Email:</span> {{ selectedBooking.booking.customer_email || '-' }}</div>
+                <div><span>Phone:</span> {{ selectedBooking.booking.customer_phone || '-' }}</div>
+                <div><span>Travel Date:</span> {{ selectedBooking.booking.travel_date | date: 'MMM d, y' }}</div>
+                <div><span>Guests:</span> {{ selectedBooking.booking.guests || 0 }}</div>
+                <div>
+                  <span>Amount:</span> {{ amountInInr(selectedBooking.booking.total_amount_paise) | currency: 'INR' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h3>Status Update</h3>
+              <div class="form-grid">
+                <select [(ngModel)]="editStatus" class="form-control">
+                  <option value="">Select Booking Status</option>
+                  <option *ngFor="let s of bookingStatuses" [value]="s">{{ s }}</option>
+                </select>
+
+                <select [(ngModel)]="editPaymentStatus" class="form-control">
+                  <option value="">Select Payment Status</option>
+                  <option *ngFor="let s of paymentStatuses" [value]="s">{{ s }}</option>
+                </select>
+              </div>
+
+              <button class="btn btn-primary" (click)="saveStatus()" [disabled]="isSavingStatus">
+                {{ isSavingStatus ? 'Saving...' : 'Save Status' }}
+              </button>
+            </div>
+
+            <div class="detail-section">
+              <h3>Operations Notes</h3>
+              <textarea
+                class="form-control textarea"
+                [(ngModel)]="editOpsNotes"
+                placeholder="Write internal booking notes here..."
+              ></textarea>
+
+              <button class="btn btn-primary" (click)="saveNotes()" [disabled]="isSavingNotes">
+                {{ isSavingNotes ? 'Saving...' : 'Save Notes' }}
+              </button>
+            </div>
+
+            <div class="detail-section">
+              <h3>Follow-up</h3>
+              <div class="form-grid">
+                <select [(ngModel)]="editFollowUpStatus" class="form-control">
+                  <option value="">Select Follow-up Status</option>
+                  <option *ngFor="let s of followUpStatuses" [value]="s">{{ s }}</option>
+                </select>
+
+                <input type="date" [(ngModel)]="editFollowUpDate" class="form-control" />
+              </div>
+
+              <textarea
+                class="form-control textarea"
+                [(ngModel)]="editFollowUpNote"
+                placeholder="Follow-up note..."
+              ></textarea>
+
+              <button class="btn btn-primary" (click)="saveFollowUp()" [disabled]="isSavingFollowUp">
+                {{ isSavingFollowUp ? 'Saving...' : 'Save Follow-up' }}
+              </button>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedBooking.booking_details">
+              <h3>Booking Details</h3>
+              <div class="detail-grid">
+                <div><span>Adults:</span> {{ selectedBooking.booking_details.adults ?? '-' }}</div>
+                <div><span>Children:</span> {{ selectedBooking.booking_details.children ?? '-' }}</div>
+                <div>
+                  <span>Child Ages:</span> {{ parseChildAges(selectedBooking.booking_details.child_ages) || '-' }}
+                </div>
+                <div><span>Hotel Rating:</span> {{ selectedBooking.booking_details.hotel_rating || '-' }}</div>
+                <div><span>Meal Plan:</span> {{ selectedBooking.booking_details.meal_plan || '-' }}</div>
+                <div><span>Flight Option:</span> {{ selectedBooking.booking_details.flight_option || '-' }}</div>
+                <div><span>Flight Number:</span> {{ selectedBooking.booking_details.flight_number || '-' }}</div>
+              </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedBooking.payments?.length">
+              <h3>Payments</h3>
+              <div class="payments-list">
+                <div class="payment-card" *ngFor="let p of selectedBooking.payments">
+                  <div><span>Payment ID:</span> {{ p.razorpay_payment_id || '-' }}</div>
+                  <div><span>Order ID:</span> {{ p.razorpay_order_id || '-' }}</div>
+                  <div><span>Amount:</span> {{ amountInInr(p.amount_paise) | currency: 'INR' }}</div>
+                  <div><span>Status:</span> {{ p.status || '-' }}</div>
+                  <div><span>Date:</span> {{ p.created_at ? (p.created_at | date: 'MMM d, y, h:mm a') : '-' }}</div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- TRAVELLERS -->
+          <ng-container *ngIf="activeDrawerTab === 'travellers'">
+            <div class="detail-section">
+              <div class="section-header-inline">
+                <h3>Travellers</h3>
+                <button class="btn btn-secondary btn-sm" (click)="loadTravellers()">Refresh</button>
+              </div>
+
+              <div *ngIf="isLoadingTravellers" class="state-msg">Loading travellers...</div>
+              <div *ngIf="!isLoadingTravellers && travellersError" class="state-msg error">
+                {{ travellersError }}
+              </div>
+
+              <div class="travellers-list" *ngIf="!isLoadingTravellers && travellers.length; else noTravellers">
+                <div class="traveller-card" *ngFor="let t of travellers; trackBy: trackByTravellerId">
+                  <div class="traveller-card-top">
+                    <div>
+                      <div class="traveller-name">{{ t.full_name }}</div>
+                      <div class="td-sub">Age: {{ t.age ?? '-' }}</div>
+                      <div class="td-sub">Email: {{ t.email || '-' }}</div>
+                      <div class="td-sub">Phone: {{ t.phone || '-' }}</div>
+                      <div class="td-sub">Passport: {{ t.passport_number || '-' }}</div>
+                    </div>
+
+                    <button class="btn btn-sm btn-primary" (click)="selectTraveller(t.id)">Review Documents</button>
+                  </div>
+
+                  <div class="traveller-doc-summary">
+                    <span class="badge" [ngClass]="statusClass(t.document_summary.passport)">
+                      Passport: {{ t.document_summary.passport }}
+                    </span>
+                    <span class="badge" [ngClass]="statusClass(t.document_summary.visa)">
+                      Visa: {{ t.document_summary.visa }}
+                    </span>
+                    <span class="badge" [ngClass]="statusClass(t.document_summary.id_proof)">
+                      ID Proof: {{ t.document_summary.id_proof }}
+                    </span>
+                    <span class="badge muted"> Supporting: {{ t.document_summary.supporting_count || 0 }} </span>
+                  </div>
+                </div>
+              </div>
+
+              <ng-template #noTravellers>
+                <div class="state-msg">No travellers found.</div>
+              </ng-template>
+            </div>
+
+            <div class="detail-section">
+              <h3>Add Travellers</h3>
+
+              <div *ngIf="addTravellerError" class="state-msg error">
+                {{ addTravellerError }}
+              </div>
+
+              <div class="add-traveller-list">
+                <div class="add-traveller-card" *ngFor="let tr of newTravellers; let i = index">
+                  <div class="form-grid">
+                    <input class="form-control" placeholder="Full name" [(ngModel)]="newTravellers[i].full_name" />
+                    <input class="form-control" type="number" placeholder="Age" [(ngModel)]="newTravellers[i].age" />
+                    <input
+                      class="form-control"
+                      placeholder="Passport Number"
+                      [(ngModel)]="newTravellers[i].passport_number"
+                    />
+                    <input class="form-control" placeholder="Email" [(ngModel)]="newTravellers[i].email" />
+                    <input class="form-control" placeholder="Phone" [(ngModel)]="newTravellers[i].phone" />
+                  </div>
+
+                  <div class="inline-actions">
+                    <button class="btn btn-secondary btn-sm" (click)="removeTravellerRow(i)">Remove</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="inline-actions">
+                <button class="btn btn-secondary" (click)="addTravellerRow()">+ Add More</button>
+                <button class="btn btn-primary" (click)="saveTravellers()" [disabled]="isSavingTravellers">
+                  {{ isSavingTravellers ? 'Saving...' : 'Save Travellers' }}
+                </button>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- DOCUMENTS -->
+          <ng-container *ngIf="activeDrawerTab === 'documents'">
+            <div class="detail-section">
+              <h3>Select Traveller</h3>
+
+              <div *ngIf="isLoadingTravellers" class="state-msg">Loading travellers...</div>
+              <div *ngIf="!isLoadingTravellers && travellersError" class="state-msg error">
+                {{ travellersError }}
+              </div>
+
+              <div class="traveller-chip-list" *ngIf="travellers.length">
+                <button
+                  class="traveller-chip"
+                  *ngFor="let t of travellers; trackBy: trackByTravellerId"
+                  [class.active]="selectedTravellerId === t.id"
+                  (click)="selectedTravellerId = t.id"
+                >
+                  {{ t.full_name }}
+                </button>
+              </div>
+
+              <div *ngIf="!travellers.length && !isLoadingTravellers" class="state-msg">
+                No travellers found. Add travellers first.
+              </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedTraveller">
+              <h3>Required Documents</h3>
+
+              <div *ngIf="documentActionError" class="state-msg error">
+                {{ documentActionError }}
+              </div>
+
+              <div class="documents-grid">
+                <div class="doc-card" *ngFor="let doc of requiredDocuments">
+                  <div class="doc-card-top">
+                    <div class="doc-title">{{ doc.doc_type | titlecase }}</div>
+                    <span class="badge" [ngClass]="statusClass(doc.status)">
+                      {{ doc.status }}
+                    </span>
+                  </div>
+
+                  <div class="doc-body">
+                    <div class="td-sub" *ngIf="doc.file_name">File: {{ doc.file_name }}</div>
+                    <div class="td-sub" *ngIf="doc.rejection_reason">Reason: {{ doc.rejection_reason }}</div>
+                    <a *ngIf="doc.file_url" [href]="doc.file_url" target="_blank" class="doc-link">View file</a>
+                    <div *ngIf="!doc.file_url" class="td-sub">No file uploaded yet.</div>
+                  </div>
+
+                  <div class="inline-actions" *ngIf="doc.id && doc.file_url">
+                    <button
+                      class="btn btn-primary btn-sm"
+                      *ngIf="canVerifyDocument(doc.status)"
+                      [disabled]="isUpdatingDocument"
+                      (click)="verifyDocument(doc.id)"
+                    >
+                      {{ isUpdatingDocument ? 'Please wait...' : 'Verify' }}
+                    </button>
+
+                    <button
+                      class="btn btn-secondary btn-sm btn-danger-outline"
+                      *ngIf="canRejectDocument(doc.status)"
+                      [disabled]="isUpdatingDocument"
+                      (click)="openRejectDocument(doc.id)"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section" *ngIf="selectedTraveller">
+              <h3>Supporting Documents</h3>
+
+              <div class="supporting-list" *ngIf="supportingDocuments.length; else noSupportingDocs">
+                <div class="supporting-item" *ngFor="let doc of supportingDocuments">
+                  <div>
+                    <div class="doc-title">{{ doc.doc_label || 'Supporting Document' }}</div>
+                    <div class="td-sub">Status: {{ doc.status }}</div>
+                    <div class="td-sub" *ngIf="doc.file_name">File: {{ doc.file_name }}</div>
+                    <div class="td-sub" *ngIf="doc.rejection_reason">Reason: {{ doc.rejection_reason }}</div>
+                  </div>
+
+                  <div class="supporting-actions">
+                    <a *ngIf="doc.file_url" [href]="doc.file_url" target="_blank" class="btn btn-secondary btn-sm">
+                      View
+                    </a>
+
+                    <button
+                      class="btn btn-primary btn-sm"
+                      *ngIf="doc.id && doc.file_url && canVerifyDocument(doc.status)"
+                      [disabled]="isUpdatingDocument"
+                      (click)="verifyDocument(doc.id)"
+                    >
+                      Verify
+                    </button>
+
+                    <button
+                      class="btn btn-secondary btn-sm btn-danger-outline"
+                      *ngIf="doc.id && doc.file_url && canRejectDocument(doc.status)"
+                      [disabled]="isUpdatingDocument"
+                      (click)="openRejectDocument(doc.id)"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <ng-template #noSupportingDocs>
+                <div class="state-msg">No supporting documents uploaded.</div>
+              </ng-template>
+            </div>
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
+  <div class="mini-modal-overlay" *ngIf="rejectingDocumentId" (click)="closeRejectDocument()">
+    <div class="mini-modal" (click)="$event.stopPropagation()">
+      <div class="mini-modal-header">
+        <h3>Reject Document</h3>
+        <button class="mini-close" (click)="closeRejectDocument()">×</button>
+      </div>
+
+      <div class="mini-modal-body">
+        <textarea
+          class="form-control textarea"
+          [(ngModel)]="rejectReason"
+          placeholder="Enter rejection reason..."
+        ></textarea>
+
+        <div class="inline-actions">
+          <button class="btn btn-secondary" (click)="closeRejectDocument()" [disabled]="isUpdatingDocument">
+            Cancel
+          </button>
+          <button class="btn btn-primary" (click)="submitRejectDocument()" [disabled]="isUpdatingDocument">
+            {{ isUpdatingDocument ? 'Submitting...' : 'Submit Reject' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW BOOKING -->
+<app-form-dialog
+  [visible]="showNewBookingForm"
+  [title]="'New Booking'"
+  [submitLabel]="'Create'"
+  [form]="newBookingForm"
+  (onVisibleChange)="showNewBookingForm = $event"
+  (onSubmit)="handleNewBooking()"
+>
+  <ng-template let-form>
+    <div [formGroup]="form" class="grid grid-cols-2 gap-x-6 gap-y-4">
+      <!-- Departure -->
+      <div class="col-span-2 flex flex-col gap-1">
+        <label class="font-semibold text-sm">Departure <span class="text-red-500">*</span></label>
+        <p-select
+          formControlName="departure_id"
+          [options]="departureOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select departure"
+          [showClear]="true"
+          (onChange)="onDepartureSelect($event)"
+          appendTo="body"
+        />
+        @if (selectedDepartureSeats() !== null) {
+          <small class="text-blue-500">Available seats: {{ selectedDepartureSeats() }}</small>
+        }
+        @if (form.get('departure_id')?.invalid && form.get('departure_id')?.touched) {
+          <small class="text-red-500">Departure is required.</small>
+        }
+      </div>
+
+      <!-- Customer Name -->
+      <div class="col-span-2 flex flex-col gap-1">
+        <label class="font-semibold text-sm">Customer Name <span class="text-red-500">*</span></label>
+        <input
+          pInputText
+          formControlName="customer_name"
+          placeholder="Full name"
+          [ngClass]="{
+            'ng-dirty ng-invalid': form.get('customer_name')?.invalid && form.get('customer_name')?.touched,
+          }"
+        />
+        @if (form.get('customer_name')?.invalid && form.get('customer_name')?.touched) {
+          @if (form.get('customer_name')?.hasError('required')) {
+            <small class="text-red-500">Customer name is required.</small>
+          }
+          @if (form.get('customer_name')?.hasError('maxlength')) {
+            <small class="text-red-500">Customer name must not exceed 120 characters.</small>
+          }
+          @if (form.get('customer_name')?.hasError('pattern')) {
+            <small class="text-red-500">Enter a valid name (only letters, spaces, and dots are allowed).</small>
+          }
+        }
+      </div>
+
+      <!-- Customer Email -->
+      <div class="col-span-2 flex flex-col gap-1">
+        <label class="font-semibold text-sm">Email <span class="text-red-500">*</span></label>
+        <input
+          pInputText
+          formControlName="customer_email"
+          placeholder="email@example.com"
+          [ngClass]="{
+            'ng-dirty ng-invalid': form.get('customer_email')?.invalid && form.get('customer_email')?.touched,
+          }"
+        />
+        @if (form.get('customer_email')?.invalid && form.get('customer_email')?.touched) {
+          <small class="text-red-500">
+            @if (form.get('customer_email')?.errors?.['required']) {
+              Email is required.
+            }
+            @if (form.get('customer_email')?.errors?.['email']) {
+              Invalid email format.
+            }
+          </small>
+        }
+      </div>
+
+      <!-- Customer Phone -->
+      <div class="col-span-2 flex flex-col gap-1">
+        <label class="font-semibold text-sm">Phone <span class="text-red-500">*</span></label>
+        <input
+          pInputText
+          formControlName="customer_phone"
+          placeholder="+91 XXXXX XXXXX"
+          [ngClass]="{
+            'ng-dirty ng-invalid': form.get('customer_phone')?.invalid && form.get('customer_phone')?.touched,
+          }"
+        />
+        @if (form.get('customer_phone')?.invalid && form.get('customer_phone')?.touched) {
+          @if (form.get('customer_phone')?.hasError('required')) {
+            <small class="text-red-500">Phone number is required.</small>
+          }
+          @if (form.get('customer_phone')?.hasError('pattern')) {
+            <small class="text-red-500">Enter a valid 10-digit number or prefixed with('+91' or '+91-').</small>
+          }
+        }
+      </div>
+
+      <!-- Travel Date -->
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Travel Date <span class="text-red-500">*</span></label>
+        <p-datePicker
+          formControlName="travel_date"
+          [showIcon]="true"
+          dateFormat="dd/mm/yy"
+          placeholder="Select date"
+          [minDate]="today"
+          appendTo="body"
+        />
+        @if (form.get('travel_date')?.invalid && form.get('travel_date')?.touched) {
+          <small class="text-red-500">Travel date is required.</small>
+        }
+      </div>
+
+      <!-- Guests -->
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Guests <span class="text-red-500">*</span></label>
+        <p-inputNumber
+          formControlName="guests"
+          [min]="1"
+          placeholder="No. of guests"
+          [placeholder]="
+            selectedDepartureSeats() !== null ? 'Max ' + selectedDepartureSeats() + ' seats' : 'No. of guests'
+          "
+        />
+        @if (form.get('guests')?.invalid && form.get('guests')?.touched) {
+          <small class="text-red-500">
+            @if (form.get('guests')?.errors?.['required']) {
+              Guest count is required.
+            }
+            @if (form.get('guests')?.errors?.['min']) {
+              At least 1 guest required.
+            }
+            @if (form.get('guests')?.errors?.['max']) {
+              Cannot exceed available seats ({{ selectedDepartureSeats() }}).
+            }
+          </small>
+        }
+      </div>
+
+      <!-- Total Amount -->
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Total Amount (₹) <span class="text-red-500">*</span></label>
+        <p-inputNumber formControlName="total_amount_paise" [min]="0" placeholder="Amount in rupee" prefix="₹ " />
+        @if (form.get('total_amount_paise')?.invalid && form.get('total_amount_paise')?.touched) {
+          <small class="text-red-500">Total amount is required.</small>
+        }
+      </div>
+
+      <!-- Payment Status -->
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Payment Status</label>
+        <p-select
+          formControlName="payment_status"
+          [options]="paymentStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </div>
+
+      <!-- Booking Status -->
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Booking Status</label>
+        <p-select formControlName="status" [options]="bookingStatusOptions" optionLabel="label" optionValue="value" />
+      </div>
+
+      <!-- Follow-up Status -->
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Follow-up Status</label>
+        <p-select
+          formControlName="follow_up_status"
+          [options]="followUpStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </div>
+
+      <!-- Follow-up Date -->
+      <div class="flex flex-col gap-1">
+        <label class="font-semibold text-sm">Follow-up Date</label>
+        <p-datePicker
+          formControlName="follow_up_date"
+          [showIcon]="true"
+          dateFormat="dd/mm/yy"
+          placeholder="Select date"
+          [minDate]="today"
+          appendTo="body"
+        />
+      </div>
+
+      <!-- Follow-up Note -->
+      <div class="col-span-2 flex flex-col gap-1">
+        <label class="font-semibold text-sm">Follow-up Note</label>
+        <textarea
+          pTextarea
+          formControlName="follow_up_note"
+          rows="2"
+          placeholder="Follow-up notes..."
+          class="w-full resize-none"
+          fluid
+        ></textarea>
+      </div>
+
+      <!-- Ops Notes -->
+      <div class="col-span-2 flex flex-col gap-1">
+        <label class="font-semibold text-sm">Ops Notes</label>
+        <textarea
+          pTextarea
+          formControlName="ops_notes"
+          rows="3"
+          placeholder="Internal operations notes..."
+          class="w-full resize-none"
+          fluid
+        ></textarea>
+      </div>
+    </div>
+  </ng-template>
+</app-form-dialog>

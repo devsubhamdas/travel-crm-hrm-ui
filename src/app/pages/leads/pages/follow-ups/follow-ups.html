@@ -1,0 +1,137 @@
+<div class="pb-16">
+  <div>
+    <div>
+      <app-page-toolbar
+        #toolbar
+        [option]="{
+          title: 'Follow-ups Management',
+          requireAction: false,
+        }"
+        [filterTemplate]="filterTpl"
+        (onSearch)="onSearch($event)"
+        [filterCount]="getFilterCount()"
+      >
+        <!-- filter-dropdown  -->
+        <ng-template #filterTpl let-close="close">
+          <form [formGroup]="filterForm" class="flex flex-col gap-3">
+            <div class="flex gap-2 items-center">
+              <label class="flex-1">Status</label>
+              <p-select
+                [options]="statusOptions"
+                placeholder="Select a status"
+                formControlName="status"
+                optionLabel="label"
+                optionValue="value"
+                size="small"
+                class="w-42"
+                [showClear]="true"
+                [pAutoFocus]="false"
+              />
+            </div>
+
+            @if (role === 'admin') {
+              <div class="flex gap-2 items-center">
+                <label class="flex-1">Agent</label>
+                <p-select
+                  [options]="sales()"
+                  formControlName="assigned_agent_id"
+                  placeholder="Select an Agent"
+                  optionLabel="name"
+                  optionValue="id"
+                  size="small"
+                  class="w-42"
+                  [showClear]="true"
+                />
+              </div>
+            }
+            <div class="flex gap-2 items-center">
+              <label class="flex-1">Followup Date</label>
+              <p-datePicker
+                formControlName="follow_up_date"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                placeholder="Select date"
+                appendTo="body"
+                class="w-42"
+              />
+            </div>
+
+            <div class="flex justify-end gap-2 mt-2">
+              <p-button label="Clear" severity="secondary" (onClick)="clearFilter(); close()" size="small" />
+              <p-button label="Apply" severity="primary" (onClick)="applyFilter(); close()" size="small" />
+            </div>
+          </form> </ng-template
+      ></app-page-toolbar>
+    </div>
+
+    <div>
+      @if (followupState$ | async; as state) {
+        <app-data-table
+          [columns]="columns"
+          [data]="state.data"
+          [totalRecords]="state.total"
+          [rows]="5"
+          [loading]="state.loading"
+          [sortField]="currentQuery.sort ?? ''"
+          [sortOrder]="currentQuery.order === 'asc' ? 1 : -1"
+          (lazyLoad)="onLazyLoad($event)"
+        >
+          <!-- Followup status color coded  -->
+          <ng-template #status let-row>
+            <p-tag
+              [value]="row.status | titlecase"
+              [rounded]="true"
+              [severity]="getStatusSeverity(row.status)"
+              class="font-normal!"
+            />
+          </ng-template>
+
+          <!-- Followup note popover -->
+          <ng-template #note let-row>
+            <p-button
+              (click)="op.toggle($event)"
+              icon="pi pi-info-circle"
+              label="Show"
+              severity="info"
+              size="small"
+              variant="text"
+            />
+            <p-popover #op styleClass="max-w-sm" appendTo="body">
+              <span>{{ row.note }}</span>
+            </p-popover>
+          </ng-template>
+        </app-data-table>
+      }
+    </div>
+  </div>
+
+  <!-- add note form  -->
+  <app-form-dialog
+    [visible]="showAddNoteForm"
+    [form]="addNoteForm"
+    [title]="'Add Note'"
+    [submitLabel]="'Save'"
+    (onVisibleChange)="showAddNoteForm = $event"
+    (onSubmit)="handleAddNote()"
+  >
+    <ng-template let-form>
+      <div [formGroup]="form" class="grid grid-cols-2 gap-x-6 gap-y-4 w-2xs md:w-md">
+        <div class="col-span-2 flex flex-col gap-1">
+          <label class="font-semibold text-sm">Note</label>
+          <textarea
+            pTextarea
+            formControlName="note"
+            rows="4"
+            placeholder="Write your note..."
+            class="w-full resize-none"
+            fluid
+          ></textarea>
+
+          @if (form.get('note')?.invalid && form.get('note')?.touched) {
+            <small class="text-red-500">Note is required.</small>
+          }
+        </div>
+      </div>
+    </ng-template>
+  </app-form-dialog>
+</div>

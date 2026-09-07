@@ -1,0 +1,83 @@
+/* primeng icon setup */
+@import "primeicons/primeicons.css";
+
+:root {
+  --indigo-50: #eef2ff;
+  --indigo-75: #e7edff;
+  --indigo-100: #e0e7ff;
+  --indigo-200: #c7d2fe;
+  --indigo-300: #a5b4fc;
+  --indigo-400: #818cf8;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+  --indigo-800: #3730a3;
+  --indigo-900: #312e81;
+  --indigo-950: #1e1b4b;
+
+  --zinc-50: #fafafa;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-500: #71717a;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-750: #333339;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  --zinc-950: #09090b;
+
+  --surface-app: var(--indigo-50); /* whole page / viewport */
+  --surface-primary: #ffffff; /* main content area */
+  --surface-secondary: var(--indigo-100); /* side panels, nav, toolbars */
+  --surface-elevated: var(--indigo-100); /* cards, modals, popovers */
+  // --surface-overlay       dialogs, dropdowns */
+  // --surface-inset         inputs, inner containers */
+  // --accent-primary        main brand color */
+  // --accent-secondary      secondary brand */
+  --accent-contrast: var(--zinc-900); /* text/icon on accent */
+  --accent-muted: var(--zinc-500); /* softer accent */
+
+  /* Neutral / utility tokens */
+  // --border-default
+  --border-subtle: var(--indigo-200);
+  // --ring-focus
+  // --shadow-sm
+  // --shadow-md
+  --avatar-bg: var(--indigo-200);
+
+  /* Button tokens */
+  --control-primary: var(--indigo-200);
+  --control-secondary: var(--indigo-100);
+  // --control-ghost
+}
+
+/* Dark mode color scheme */
+.app-dark-mode {
+  --surface-app: var(--zinc-750);
+  --surface-primary: #000000;
+  --surface-secondary: var(--zinc-800);
+  --surface-elevated: var(--zinc-800);
+
+  // --surface-overlay
+  // --surface-inset
+
+  // --accent-primary
+  // --accent-secondary
+  --accent-contrast: var(--zinc-50);
+  --accent-muted: var(--zinc-400);
+
+  /* Neutral / utility tokens */
+  // --border-default
+  --border-subtle: var(--zinc-600);
+  // --ring-focus
+  // --shadow-sm
+  // --shadow-md
+  --avatar-bg: var(--zinc-700);
+
+  /* Button tokens */
+  --control-primary: var(--zinc-900);
+  --control-secondary: var(--zinc-800);
+  // --control-ghost
+}

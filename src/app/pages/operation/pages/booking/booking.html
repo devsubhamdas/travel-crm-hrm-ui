@@ -1,0 +1,17 @@
+<div class="pb-16">
+  <div>
+    <div>
+      <app-page-toolbar
+        #toolbar
+        [option]="{
+          title: 'Leads Management',
+        }"
+        (onSearch)="onSearch($event)"
+        (onActionNew)="showNewBookingForm = true"
+        (onActionSync)="handleSync()"
+        [syncLoading]="syncLoading()"
+      ></app-page-toolbar>
+    </div>
+    <div></div>
+  </div>
+</div>

@@ -1,0 +1,11 @@
+:host ::ng-deep .p-button {
+  @media screen and (max-width: 720px) {
+    .p-button-label {
+      display: none;
+    }
+  }
+}
+
+:host ::ng-deep .p-button .p-badge {
+  font-size: 0.575rem; /* equivalent to text-xs */
+}

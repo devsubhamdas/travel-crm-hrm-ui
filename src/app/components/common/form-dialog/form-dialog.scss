@@ -1,0 +1,10 @@
+:host ::ng-deep .p-dialog {
+  overflow: hidden;
+  margin-inline: 5px;
+  .p-dialog-header {
+    background-color: var(--surface-app);
+  }
+  .p-dialog-content {
+    padding-top: 1rem;
+  }
+}

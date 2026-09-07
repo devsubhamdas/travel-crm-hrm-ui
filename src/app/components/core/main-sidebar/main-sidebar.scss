@@ -1,0 +1,137 @@
+/* sidebar.component.scss */
+// sidebar for expanded menu
+:host ::ng-deep .p-menu {
+  border: none;
+  border-radius: unset;
+  background-color: var(--surface-secondary);
+  min-width: unset !important;
+
+  .p-menu-list {
+    .p-menu-item-content {
+      .p-menu-item-label {
+        color: var(--accent-muted);
+      }
+      .p-menu-item-icon {
+        transition: all 0.3s;
+        font-size: 14px;
+      }
+
+      .p-menu-item-link:hover:not(.p-menu-item-link-active) {
+        background-color: var(--control-primary);
+      }
+
+      .p-menu-item-link-active {
+        background-color: var(--control-primary);
+        .p-menu-item-label,
+        .p-menu-item-icon {
+          color: var(--accent-contrast);
+        }
+      }
+    }
+  }
+}
+
+// sidebar for collapsed menu
+:host ::ng-deep .icon-only .p-menu {
+  width: min-content;
+  .p-menu-list {
+    .p-menu-item-content {
+      .p-menu-item-icon {
+        padding: 5px;
+        font-size: 17px;
+        @media screen and (max-width: 520px) {
+          padding: 2px;
+          font-size: 13px;
+        }
+      }
+    }
+  }
+}
+
+:host ::ng-deep .p-avatar {
+  background-color: var(--avatar-bg);
+}
+
+// logout btn for expanded menu
+:host ::ng-deep .p-button {
+  justify-content: flex-start;
+  .p-button-icon,
+  .p-button-label {
+    font-size: 14px;
+  }
+}
+
+// logout btn for collpased menu
+:host ::ng-deep .icon-only .p-button {
+  justify-content: center;
+  justify-self: center;
+}
+
+// toggle sidebar btn anchor positioning and toggle button
+:host ::ng-deep .c-nav {
+  anchor-name: --nav-anchor;
+}
+
+// toggle sidebar button
+:host ::ng-deep .c-toggle-menu-btn-wrapper {
+  position: absolute;
+  position-anchor: --nav-anchor;
+  top: anchor(top);
+  left: anchor(right);
+
+  --toggle-btn-border-radius: 5px;
+
+  .p-button {
+    border-radius: unset;
+    border: unset !important;
+    padding: unset;
+    padding-inline: 0;
+    width: 16px;
+    height: 60px;
+    background-color: var(--surface-secondary);
+    border-bottom-right-radius: var(--toggle-btn-border-radius);
+
+    &:hover {
+      background-color: var(--control-primary);
+    }
+
+    .p-button-icon {
+      color: var(--indigo-400);
+    }
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: var(--toggle-btn-border-radius);
+    aspect-ratio: 1 / 1;
+    background-color: var(--surface-secondary);
+    bottom: 0;
+    left: 0;
+    transform: translateY(100%);
+    transition: background-color 0.2s ease;
+  }
+  &::before {
+    content: "";
+    position: absolute;
+    width: calc(var(--toggle-btn-border-radius) * 2);
+    aspect-ratio: 1 / 1;
+    background-color: var(--surface-app);
+    bottom: 0;
+    left: 0;
+    transform: translateY(100%);
+    z-index: 999;
+    border-radius: 50%;
+  }
+
+  &:has(.p-button:hover)::after {
+    background-color: var(--control-primary);
+  }
+}
+
+.c-scrollbar-hidden {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,44 @@
+:host {
+  --table-border-radius: 8px;
+}
+
+/* Target the scrollable table container only */
+:host ::ng-deep .p-datatable .p-datatable-table-container {
+  border-top-left-radius: var(--table-border-radius);
+  border-top-right-radius: var(--table-border-radius);
+  overflow: hidden;
+}
+
+/* Counteract the parent's border-radius bleed */
+:host ::ng-deep .p-datatable {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--table-border-radius);
+  overflow: visible; /* keep this so paginator isn't clipped */
+}
+
+/* Header styling */
+:host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  padding-block: 1.375rem;
+  background-color: var(--surface-elevated) !important;
+  white-space: nowrap;
+}
+
+/* Body cells */
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  white-space: nowrap;
+}
+
+/* Round paginator bottom corners */
+:host ::ng-deep .p-paginator {
+  border-radius: 0;
+  padding-block: 0.725rem;
+  border-bottom-left-radius: var(--table-border-radius);
+  border-bottom-right-radius: var(--table-border-radius);
+}
+
+// column sort icon
+:host ::ng-deep .p-datatable-sort-icon.p-icon {
+  padding-top: 4px;
+  height: 15px;
+  aspect-ratio: 1 / 1;
+}

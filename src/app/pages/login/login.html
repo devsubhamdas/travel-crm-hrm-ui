@@ -1,0 +1,46 @@
+<main class="min-h-dvh grid place-items-center bg-surface-app-light dark:bg-surface-app-dark">
+  <div>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4 w-full sm:w-56">
+      <div class="flex flex-col gap-1">
+        <p-float-label variant="on">
+          <input
+            pInputText
+            type="email"
+            id="email"
+            class="w-full"
+            formControlName="email"
+            [invalid]="isInvalid('email')"
+          />
+          <label for="email">Email</label>
+        </p-float-label>
+        @if (isInvalid('email')) {
+          @if (loginForm.get('email')?.errors?.['required']) {
+            <p-message severity="error" size="small" variant="simple">Email is required.</p-message>
+          }
+          @if (loginForm.get('email')?.errors?.['email']) {
+            <p-message severity="error" size="small" variant="simple">Please enter a valid email.</p-message>
+          }
+        }
+      </div>
+      <div class="flex flex-col gap-1">
+        <p-float-label variant="on">
+          <p-password
+            formControlName="password"
+            [feedback]="false"
+            [toggleMask]="true"
+            placeholder=""
+            [ngClass]="{
+              'ng-dirty ng-invalid': loginForm.get('password')?.invalid && loginForm.get('password')?.touched,
+            }"
+            [fluid]="true"
+          ></p-password>
+          <label for="password">Password</label>
+        </p-float-label>
+        @if (isInvalid('password')) {
+          <p-message severity="error" size="small" variant="simple">Password is required.</p-message>
+        }
+      </div>
+      <button pButton severity="primary" type="submit"><span pButtonLabel>Login</span></button>
+    </form>
+  </div>
+</main>

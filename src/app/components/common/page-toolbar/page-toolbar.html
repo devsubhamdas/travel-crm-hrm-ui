@@ -1,0 +1,69 @@
+@let opt = resolvedOptions();
+<div>
+  <div class="flex items-center justify-between">
+    <section>
+      <div>
+        <h1 class="text-lg">{{ opt?.title }}</h1>
+      </div>
+    </section>
+    @if (opt?.requireAction) {
+      <section>
+        <div>
+          <p-button
+            label="New"
+            icon="pi pi-plus"
+            size="small"
+            aria-label="Create new item"
+            (onClick)="onActionNew.emit()"
+          />
+        </div>
+      </section>
+    }
+  </div>
+  <div class="my-4">
+    <div class="flex items-center justify-start gap-3">
+      @if (opt.requireSearch) {
+        <div class="flex-1 min-[720px]:flex-0">
+          <p-iconfield>
+            <p-inputicon class="pi pi-search" />
+            <input
+              type="text"
+              [ngModel]="search"
+              pInputText
+              placeholder="Search"
+              pSize="small"
+              class="w-full! sm:w-xs! lg:w-96!"
+              (ngModelChange)="onInput($event)"
+            />
+          </p-iconfield>
+        </div>
+      }
+      @if (opt.requireFilter) {
+        <div>
+          <p-button
+            label="Filter"
+            icon="pi pi-filter"
+            size="small"
+            severity="secondary"
+            (onClick)="filterTemplate() && filterMenu.open($event)"
+            [badge]="filterCount() > 0 ? filterCount() + '' : undefined"
+            badgeSeverity="danger"
+          />
+          <app-filter-dropdown #filterMenu [contentTemplate]="filterTemplate()"></app-filter-dropdown>
+        </div>
+      }
+      @if (opt.requireSync) {
+        <div>
+          <p-button
+            label="Sync"
+            icon="pi pi-sync"
+            [loading]="syncLoading()"
+            size="small"
+            severity="secondary"
+            (onClick)="onActionSync.emit()"
+          />
+        </div>
+      }
+    </div>
+  </div>
+</div>

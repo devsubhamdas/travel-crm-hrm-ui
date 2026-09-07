@@ -1,0 +1,17 @@
+:host ::ng-deep .p-button {
+  background-color: var(--control-secondary);
+
+  &:hover {
+    background-color: var(--control-primary);
+  }
+}
+
+:host ::ng-deep .p-badge {
+  outline-width: 0px !important;
+  @media screen and (max-width: 720px) {
+    min-width: unset;
+    height: unset;
+    width: 6px;
+    aspect-ratio: 1 / 1;
+  }
+}

@@ -1,0 +1,112 @@
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-18">
+  <!-- LEFT -->
+  <div class="lg:col-span-8">
+    @if (loading()) {
+      <p-card>
+        <div class="flex justify-between mb-6">
+          <p-skeleton width="200px" height="20px"></p-skeleton>
+          <p-skeleton width="80px" height="20px"></p-skeleton>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <p-skeleton width="100%" height="16px"></p-skeleton>
+          }
+        </div>
+      </p-card>
+    } @else {
+      <p-card>
+        <!-- HEADER -->
+        <ng-template pTemplate="title">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-lg font-semibold">
+                {{ employee()?.name | uppercase }}
+              </div>
+              <div class="text-sm text-gray-500">Employee #{{ employee()?.id }}</div>
+            </div>
+
+            <p-tag
+              [value]="employee()?.role | uppercase"
+              [severity]="getRoleSeverity(employee()?.role)"
+              class="capitalize"
+              [rounded]="true"
+              class="font-medium!"
+            ></p-tag>
+          </div>
+        </ng-template>
+
+        <!-- DETAILS -->
+        <div class="grid grid-cols-2 gap-x-6 gap-y-5 text-sm">
+          <div class="col-span-2">
+            <div class="text-gray-500"><i class="pi pi-envelope text-sm! mr-1"></i>Email</div>
+            <div class="font-medium">{{ employee()?.email }}</div>
+          </div>
+
+          <div class="col-span-2">
+            <div class="text-gray-500"><i class="pi pi-phone text-sm! mr-1"></i>Contact</div>
+            <div class="font-medium">{{ employee()?.contact_no }}</div>
+          </div>
+
+          <div>
+            <div class="text-gray-500"><i class="pi pi-user text-sm! mr-1"></i>Role</div>
+            <div class="font-medium capitalize">
+              {{ employee()?.role }}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-gray-500"><i class="pi pi-check-circle text-sm! mr-1"></i>Status</div>
+            <p-tag
+              [value]="employee()?.is_active ? 'Active' : 'Inactive'"
+              [severity]="getStatusSeverity(employee()?.is_active ? 'Active' : 'Inactive')"
+              class="capitalize"
+              [rounded]="true"
+              class="font-normal!"
+            />
+          </div>
+        </div>
+
+        <p-divider></p-divider>
+
+        <!-- FOOTER -->
+        <div class="text-xs text-gray-500">
+          Created:
+          {{ employee()?.createdAt | date: 'dd MMM yyyy, hh:mm a' }}
+        </div>
+      </p-card>
+    }
+  </div>
+
+  <!-- RIGHT -->
+  <div class="lg:col-span-4 space-y-6">
+    @if (!loading()) {
+      <p-card>
+        <ng-template pTemplate="title">Performance</ng-template>
+
+        <div class="space-y-4 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-500">Assigned Leads</span>
+            <span class="font-semibold">
+              {{ employee()?.assigned_leads_count || 0 }}
+            </span>
+          </div>
+
+          <div class="flex justify-between">
+            <span class="text-gray-500">Converted Leads</span>
+            <span class="font-semibold text-green-600">
+              {{ employee()?.converted_leads_count || 0 }}
+            </span>
+          </div>
+
+          <div class="flex justify-between">
+            <span class="text-gray-500">Pending Follow-ups</span>
+            <span class="font-semibold text-yellow-600">
+              {{ employee()?.pending_follow_ups_count || 0 }}
+            </span>
+          </div>
+        </div>
+      </p-card>
+    }
+  </div>
+</div>
